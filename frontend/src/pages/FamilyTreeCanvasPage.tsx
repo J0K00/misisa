@@ -1,12 +1,15 @@
+import { useState } from "react"
 import { useParams, Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import SpatialCanvas from "@/components/canvas/SpatialCanvas"
 import { useFamilyTree } from "@/hooks/useFamilyTree"
-import { Plus, Users, ArrowLeft } from "lucide-react"
+import { Plus, Users, ArrowLeft, X } from "lucide-react"
+import { CreateMemberForm } from "@/components/forms/CreateMemberForm"
 
 export default function FamilyTreeCanvasPage() {
   const { familyId } = useParams()
   const { data: treeData, isLoading } = useFamilyTree(familyId || "")
+  const [showAddMember, setShowAddMember] = useState(false)
 
   return (
     <div className="relative w-full h-screen bg-[#FDFBF7] overflow-hidden">
@@ -24,7 +27,10 @@ export default function FamilyTreeCanvasPage() {
         </div>
         
         <div className="flex gap-3">
-          <Button className="bg-[#3B2314] hover:bg-[#2A2421] text-white rounded-full px-6">
+          <Button 
+            className="bg-[#3B2314] hover:bg-[#2A2421] text-white rounded-full px-6"
+            onClick={() => setShowAddMember(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Ajouter un membre
           </Button>
@@ -44,6 +50,26 @@ export default function FamilyTreeCanvasPage() {
       </div>
 
       <SpatialCanvas />
+
+      {/* Modal Ajout Membre */}
+      {showAddMember && familyId && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-stone-100">
+              <h2 className="text-xl font-serif font-semibold text-stone-900">Nouveau membre</h2>
+              <button onClick={() => setShowAddMember(false)} className="text-stone-400 hover:text-stone-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <CreateMemberForm 
+                familyId={familyId} 
+                onClose={() => setShowAddMember(false)} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -44,3 +44,17 @@ export function useCreateFamily() {
     }
   })
 }
+
+export function useCreatePerson() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (personData: any) => {
+      const { data } = await api.post("/persons/", personData)
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["familyTree", variables.family_id] })
+      queryClient.invalidateQueries({ queryKey: ["familyMembers", variables.family_id] })
+    }
+  })
+}

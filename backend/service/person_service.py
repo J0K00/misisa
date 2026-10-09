@@ -8,8 +8,20 @@ class PersonService:
     def __init__(self, db: Session):
         self.repo = PersonRepository(db)
 
-    def get_family_members(self, family_id: UUID):
+    def get_family_members(self, family_id: UUID, user_id: UUID):
+        # Todo: check if viewer
         return self.repo.get_by_family(family_id)
 
-    def create_person(self, person: PersonCreate):
+    def create_person(self, person: PersonCreate, user_id: UUID):
+        from entity.family_membership_entity import FamilyMembershipEntity
+        from exception.global_exceptions import ForbiddenException
+        
+        membership = self.repo.db.query(FamilyMembershipEntity).filter(
+            FamilyMembershipEntity.family_id == person.family_id,
+            FamilyMembershipEntity.user_id == user_id
+        ).first()
+
+        if not membership or membership.role not in ["PATRIARCH", "EDITOR"]:
+            raise ForbiddenException("Droits insuffisants pour ajouter un membre.")
+            
         return self.repo.create(person)
