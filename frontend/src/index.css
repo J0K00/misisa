@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-serif: "Playfair Display", serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  --color-parchemin-50: #FDFBF7;
+  --color-parchemin-100: #F4EFE6;
+  --color-stone-900: #2A2421;
+  --color-stone-800: #4A3E3D;
+  --color-amber-950: #3B2314;
+  --color-amber-900: #5C3A21;
+  --color-amber-800: #8B5A2B;
+  --color-emerald-900: #2E5A27;
+  --color-emerald-800: #487042;
+}
+
+:root {
+  /* Cocon de Souvenirs palette mapped to shadcn */
+  --background: #FDFBF7;
+  --foreground: #2A2421;
+
+  --card: #F4EFE6;
+  --card-foreground: #2A2421;
+
+  --popover: #FDFBF7;
+  --popover-foreground: #2A2421;
+
+  --primary: #3B2314;
+  --primary-foreground: #FDFBF7;
+
+  --secondary: #2E5A27;
+  --secondary-foreground: #FDFBF7;
+
+  --muted: #F4EFE6;
+  --muted-foreground: #4A3E3D;
+
+  --accent: #F4EFE6;
+  --accent-foreground: #2A2421;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #F4EFE6;
+  --input: #F4EFE6;
+  --ring: #3B2314;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* We can define dark mode later if needed */
+  --background: #2A2421;
+  --foreground: #FDFBF7;
+  --card: #4A3E3D;
+  --card-foreground: #FDFBF7;
+  --popover: #2A2421;
+  --popover-foreground: #FDFBF7;
+  --primary: #FDFBF7;
+  --primary-foreground: #3B2314;
+  --secondary: #487042;
+  --secondary-foreground: #FDFBF7;
+  --muted: #4A3E3D;
+  --muted-foreground: #F4EFE6;
+  --accent: #4A3E3D;
+  --accent-foreground: #FDFBF7;
+  --border: #4A3E3D;
+  --input: #4A3E3D;
+  --ring: #F4EFE6;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
