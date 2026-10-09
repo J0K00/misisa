@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuthStore } from "../store/useAuthStore"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { api } from "../services/api"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -12,19 +13,29 @@ export default function LoginPage() {
     password: ""
   })
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Connecter avec l'API
-    setAuth({
-      id: "1",
-      email: formData.email,
-      first_name: "Test",
-      last_name: "User"
-    })
-    navigate("/dashboard")
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const response = await api.post("/auth/login", {
+        email: formData.email,
+        password: formData.password
+      })
+      
+      setAuth(response.data.user, response.data.access_token)
+      navigate("/dashboard")
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Email ou mot de passe incorrect.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -35,6 +46,12 @@ export default function LoginPage() {
           <h1 className="text-2xl font-serif text-[#2A2421] mt-4">Bon retour</h1>
           <p className="text-stone-500 mt-2">Connectez-vous à votre compte</p>
         </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-100">
+            {error}
+          </div>
+        )}
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
@@ -73,8 +90,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full bg-[#3B2314] hover:bg-[#2A2421] text-[#FDFBF7] h-12 text-lg">
-            Se connecter
+          <Button type="submit" disabled={isLoading} className="w-full bg-[#3B2314] hover:bg-[#2A2421] text-[#FDFBF7] h-12 text-lg">
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Se connecter"}
           </Button>
         </form>
 

@@ -37,6 +37,9 @@ api.interceptors.response.use(
       if (window.location.pathname !== '/login') {
         window.location.href = '/login'
       }
+    } else if (error.response?.status === 403) {
+      const msg = error.response?.data?.message || error.response?.data?.detail || "Vous n'avez pas la permission d'effectuer cette action."
+      useModalStore.getState().showModal('error', 'Accès refusé', msg)
     }
     return Promise.reject(error)
   }

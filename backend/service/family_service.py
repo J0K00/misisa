@@ -30,8 +30,11 @@ class FamilyService:
         import uuid
         import string
         import random
+        from datetime import date
         from entity.family_entity import FamilyEntity
         from entity.family_membership_entity import FamilyMembershipEntity
+        from entity.person_entity import PersonEntity
+        from entity.user_entity import UserEntity
 
         # Generate random invite code
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -46,6 +49,22 @@ class FamilyService:
                 role="PATRIARCH"
             )
             self.family_repo.db.add(membership)
+
+            # Fetch user to get name
+            user = self.family_repo.db.query(UserEntity).filter(UserEntity.id == user_id).first()
+            if user:
+                # Create the patriarch as a Person in the tree
+                patriarch_person = PersonEntity(
+                    family_id=created.id,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    birth_date=date(1970, 1, 1), # Default date
+                    gender="M", # Default
+                    x=0,
+                    y=0
+                )
+                self.family_repo.db.add(patriarch_person)
+
             self.family_repo.db.commit()
 
         return created

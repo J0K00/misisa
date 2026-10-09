@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useTreeStore } from "../../store/useTreeStore"
 import { MemberDetailSheet, type Member } from "../drawer/MemberDetailSheet"
+import { AddChildToUnionForm } from "../forms/AddChildToUnionForm"
 import { useFamilyTree } from "../../hooks/useFamilyTree"
 import { Loader2 } from "lucide-react"
 
@@ -16,6 +17,8 @@ export default function SpatialCanvas() {
   const [isDragging, setIsDragging] = useState(false)
   const [startPan, setStartPan] = useState({ x: 0, y: 0 })
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+  const [selectedUnionId, setSelectedUnionId] = useState<string | null>(null)
+  const [activeBranchId, setActiveBranchId] = useState<string | null>(null)
 
   // Rendu du Canvas 2D pour les racines (Lignes organiques)
   useEffect(() => {
@@ -47,8 +50,8 @@ export default function SpatialCanvas() {
       const children = treeData?.children || []
 
       unions.forEach((union: any) => {
-        const p1 = members.find((m: any) => m.id === union.partner1Id)
-        const p2 = members.find((m: any) => m.id === union.partner2Id)
+        const p1 = members.find((m: any) => m.id === union.partner_1_id)
+        const p2 = members.find((m: any) => m.id === union.partner_2_id)
         
       // 1. Dessiner le lien d'union (horizontal - plus épais)
         if (p1 && p2) {
@@ -71,9 +74,9 @@ export default function SpatialCanvas() {
         }
         
         // 2. Dessiner les liens verticaux (enfants - s'affinant)
-        const unionChildren = children.filter((c: any) => c.unionId === union.id)
+        const unionChildren = children.filter((c: any) => c.union_id === union.id)
         unionChildren.forEach((c: any) => {
-          const child = members.find((m: any) => m.id === c.childId)
+          const child = members.find((m: any) => m.id === c.child_id)
           if (child && p1 && p2) {
             const unionMidX = (p1.x! + 200 + p2.x!) / 2
             const unionMidY = p1.y! + 45
@@ -102,6 +105,8 @@ export default function SpatialCanvas() {
   }, [x, y, scale])
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    setActiveBranchId(null)
+    
     // Si on clique sur un membre, on ne pan pas
     if ((e.target as HTMLElement).closest('.member-node')) return
     
@@ -161,6 +166,46 @@ export default function SpatialCanvas() {
             <p className="font-serif text-lg text-stone-800">{member.last_name}</p>
           </div>
         ))}
+        {treeData?.unions?.map((union: any) => {
+          const p1 = treeData.persons.find((m: any) => m.id === union.partner_1_id)
+          const p2 = treeData.persons.find((m: any) => m.id === union.partner_2_id)
+          if (!p1 || !p2) return null
+          
+          const unionMidX = (p1.x! + 200 + p2.x!) / 2
+          const unionMidY = p1.y! + 45
+          const gap = Math.abs(p2.x! - (p1.x! + 200))
+          
+          return (
+            <div
+              key={`union-branch-${union.id}`}
+              className="absolute pointer-events-auto flex items-center justify-center z-10 cursor-pointer group"
+              style={{ 
+                left: unionMidX - 50, 
+                top: unionMidY - 20, 
+                width: 100, 
+                height: 40 
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setActiveBranchId(activeBranchId === union.id ? null : union.id)
+              }}
+            >
+              {/* Le bouton + apparait uniquement si la branche est cliquée */}
+              {activeBranchId === union.id && (
+                <button
+                  className="bg-[#3B2314] hover:bg-[#2A2421] text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition-transform hover:scale-110 animate-in zoom-in-75 duration-200"
+                  title="Ajouter une naissance"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedUnionId(union.id)
+                  }}
+                >
+                  +
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       <MemberDetailSheet 
@@ -168,6 +213,27 @@ export default function SpatialCanvas() {
         open={!!selectedMember} 
         onOpenChange={(o) => !o && setSelectedMember(null)} 
       />
+
+      {/* Modal Ajout Naissance */}
+      {selectedUnionId && familyId && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-stone-100">
+              <h2 className="text-xl font-serif font-semibold text-stone-900">Ajouter une naissance</h2>
+              <button onClick={() => setSelectedUnionId(null)} className="text-stone-400 hover:text-stone-600">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <AddChildToUnionForm 
+                familyId={familyId} 
+                unionId={selectedUnionId}
+                onClose={() => setSelectedUnionId(null)} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

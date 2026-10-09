@@ -17,7 +17,8 @@ export function CreateMemberForm({ familyId, onClose }: Props) {
     last_name: "",
     birth_date: "",
     death_date: "",
-    gender: "M"
+    gender: "M",
+    bio: ""
   })
 
   const { mutateAsync: createPerson, isPending } = useCreatePerson()
@@ -93,6 +94,30 @@ export function CreateMemberForm({ familyId, onClose }: Props) {
           <option value="F">Femme</option>
           <option value="O">Autre</option>
         </select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Biographie</Label>
+        <textarea 
+          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          placeholder="Racontez son histoire..."
+          value={formData.bio}
+          onChange={e => setFormData({...formData, bio: e.target.value})}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Photo de profil</Label>
+        <Input 
+          type="file" 
+          accept="image/*"
+          className="cursor-pointer"
+          onChange={e => {
+            // Placeholder: L'upload vers Cloudinary sera géré ici plus tard
+            console.log("Fichier sélectionné", e.target.files)
+          }}
+        />
+        <p className="text-xs text-stone-500">L'image sera automatiquement redimensionnée.</p>
       </div>
 
       <div className="pt-4 flex justify-end gap-2">

@@ -13,6 +13,7 @@ class PersonEntity(Base):
     birth_date = Column(Date)
     death_date = Column(Date, nullable=True)
     gender = Column(String(1))
+    bio = Column(String, nullable=True)
     x = Column(Integer, default=0)
     y = Column(Integer, default=0)
     

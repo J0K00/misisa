@@ -24,4 +24,11 @@ class PersonService:
         if not membership or membership.role not in ["PATRIARCH", "EDITOR"]:
             raise ForbiddenException("Droits insuffisants pour ajouter un membre.")
             
+        # Auto-offset to prevent stacking
+        from entity.person_entity import PersonEntity
+        count = self.repo.db.query(PersonEntity).filter(PersonEntity.family_id == person.family_id).count()
+        if person.x == 0 and person.y == 0:
+            person.x = (count % 5) * 350
+            person.y = (count // 5) * 200
+            
         return self.repo.create(person)

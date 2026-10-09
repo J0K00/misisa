@@ -3,19 +3,22 @@ from typing import Optional
 from datetime import date
 from uuid import UUID
 
-class UnionBase(BaseModel):
+class UnionCreate(BaseModel):
+    family_id: UUID
     partner_1_id: UUID
     partner_2_id: Optional[UUID] = None
     marriage_date: Optional[date] = None
     divorce_date: Optional[date] = None
 
-class UnionResponse(UnionBase):
+class UnionResponse(BaseModel):
     id: UUID
+    partner_1_id: UUID
+    partner_2_id: Optional[UUID] = None
+    marriage_date: Optional[date] = None
+    divorce_date: Optional[date] = None
+
     class Config:
         from_attributes = True
 
-class UnionChildResponse(BaseModel):
-    union_id: UUID
+class UnionChildCreate(BaseModel):
     child_id: UUID
-    class Config:
-        from_attributes = True

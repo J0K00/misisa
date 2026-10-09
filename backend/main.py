@@ -52,6 +52,8 @@ app.include_router(auth_router)
 app.include_router(person_router)
 app.include_router(photo_router)
 app.include_router(family_router)
+from controller.union_controller import router as union_router
+app.include_router(union_router)
 
 @app.get("/")
 def read_root():

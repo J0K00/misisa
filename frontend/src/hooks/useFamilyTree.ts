@@ -58,3 +58,29 @@ export function useCreatePerson() {
     }
   })
 }
+
+export function useCreateUnion() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (unionData: any) => {
+      const { data } = await api.post("/unions/", unionData)
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["familyTree", variables.family_id] })
+    }
+  })
+}
+
+export function useAddChildToUnion() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: { union_id: string, child_id: string, family_id: string }) => {
+      const response = await api.post(`/unions/${data.union_id}/children`, { child_id: data.child_id })
+      return response.data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["familyTree", variables.family_id] })
+    }
+  })
+}

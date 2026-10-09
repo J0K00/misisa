@@ -10,6 +10,7 @@ class PersonBase(BaseModel):
     birth_date: date
     death_date: Optional[date] = None
     gender: str
+    bio: Optional[str] = None
     x: Optional[int] = 0
     y: Optional[int] = 0
 
