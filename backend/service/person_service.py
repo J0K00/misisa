@@ -31,4 +31,12 @@ class PersonService:
             person.x = (count % 5) * 350
             person.y = (count // 5) * 200
             
-        return self.repo.create(person)
+        created_person = self.repo.create(person)
+
+        if getattr(person, 'parent_union_id', None):
+            from entity.union_entity import UnionChildrenEntity
+            union_child = UnionChildrenEntity(union_id=person.parent_union_id, child_id=created_person.id)
+            self.repo.db.add(union_child)
+            self.repo.db.commit()
+
+        return created_person

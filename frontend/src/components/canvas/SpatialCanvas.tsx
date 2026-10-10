@@ -185,7 +185,7 @@ export default function SpatialCanvas() {
                 width: 100, 
                 height: 40 
               }}
-              onClick={(e) => {
+              onPointerDown={(e) => {
                 e.stopPropagation()
                 setActiveBranchId(activeBranchId === union.id ? null : union.id)
               }}
@@ -195,7 +195,7 @@ export default function SpatialCanvas() {
                 <button
                   className="bg-[#3B2314] hover:bg-[#2A2421] text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition-transform hover:scale-110 animate-in zoom-in-75 duration-200"
                   title="Ajouter une naissance"
-                  onClick={(e) => {
+                  onPointerDown={(e) => {
                     e.stopPropagation()
                     setSelectedUnionId(union.id)
                   }}

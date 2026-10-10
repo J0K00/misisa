@@ -8,10 +8,11 @@ import { Loader2 } from "lucide-react"
 
 interface Props {
   familyId: string
+  parentUnionId?: string
   onClose: () => void
 }
 
-export function CreateMemberForm({ familyId, onClose }: Props) {
+export function CreateMemberForm({ familyId, parentUnionId, onClose }: Props) {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -32,6 +33,7 @@ export function CreateMemberForm({ familyId, onClose }: Props) {
       await createPerson({
         ...formData,
         family_id: familyId,
+        parent_union_id: parentUnionId,
         death_date: formData.death_date || null
       })
       showModal('success', 'Membre ajouté !', 'Le nouveau membre a été ajouté à la famille avec succès.')

@@ -16,6 +16,7 @@ class PersonBase(BaseModel):
 
 class PersonCreate(PersonBase):
     family_id: UUID
+    parent_union_id: Optional[UUID] = None
 
 class PersonResponse(PersonBase):
     id: UUID

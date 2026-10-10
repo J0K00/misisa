@@ -52,8 +52,10 @@ export function MemberPhotoCarousel({ personId }: { personId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-serif text-xl text-stone-900">Souvenirs ({photos.length}/10)</h3>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-serif text-2xl text-stone-900 border-b border-stone-200 w-full pb-2">
+          Souvenirs ({photos.length}/10)
+        </h3>
       </div>
 
       {photos.length === 0 ? (

@@ -14,7 +14,8 @@ class PersonRepository:
         return self.db.query(PersonEntity).filter(PersonEntity.family_id == family_id).all()
 
     def create(self, person: PersonCreate) -> PersonEntity:
-        new_person = PersonEntity(**person.model_dump())
+        data = person.model_dump(exclude={"parent_union_id"})
+        new_person = PersonEntity(**data)
         self.db.add(new_person)
         self.db.commit()
         self.db.refresh(new_person)
