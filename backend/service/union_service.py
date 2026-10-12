@@ -8,16 +8,22 @@ class UnionService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_union(self, union_dto: UnionCreate, user_id: UUID):
+    def create_union(self, union_dto: UnionCreate, user_id: UUID, current_user = None):
         from entity.family_membership_entity import FamilyMembershipEntity
         
-        # Check permissions
-        membership = self.db.query(FamilyMembershipEntity).filter(
-            FamilyMembershipEntity.family_id == union_dto.family_id,
-            FamilyMembershipEntity.user_id == user_id
-        ).first()
+        is_authorized = False
+        if current_user and getattr(current_user, "is_guest", False):
+            if current_user.family_id == union_dto.family_id and current_user.role == "EDITOR":
+                is_authorized = True
+        else:
+            membership = self.db.query(FamilyMembershipEntity).filter(
+                FamilyMembershipEntity.family_id == union_dto.family_id,
+                FamilyMembershipEntity.user_id == user_id
+            ).first()
+            if membership and membership.role in ["PATRIARCH", "EDITOR"]:
+                is_authorized = True
 
-        if not membership or membership.role not in ["PATRIARCH", "EDITOR"]:
+        if not is_authorized:
             raise ForbiddenException("Droits insuffisants pour créer une union dans cette famille.")
 
         union = UnionEntity(
@@ -31,7 +37,7 @@ class UnionService:
         self.db.refresh(union)
         return union
 
-    def add_child(self, union_id: UUID, child_id: UUID, user_id: UUID):
+    def add_child(self, union_id: UUID, child_id: UUID, user_id: UUID, current_user = None):
         from entity.family_membership_entity import FamilyMembershipEntity
         from entity.union_entity import UnionChildrenEntity, UnionEntity
         
@@ -45,13 +51,19 @@ class UnionService:
         if not p1:
             raise NotFoundException("Partenaire introuvable.")
             
-        # Check permissions
-        membership = self.db.query(FamilyMembershipEntity).filter(
-            FamilyMembershipEntity.family_id == p1.family_id,
-            FamilyMembershipEntity.user_id == user_id
-        ).first()
+        is_authorized = False
+        if current_user and getattr(current_user, "is_guest", False):
+            if current_user.family_id == p1.family_id and current_user.role == "EDITOR":
+                is_authorized = True
+        else:
+            membership = self.db.query(FamilyMembershipEntity).filter(
+                FamilyMembershipEntity.family_id == p1.family_id,
+                FamilyMembershipEntity.user_id == user_id
+            ).first()
+            if membership and membership.role in ["PATRIARCH", "EDITOR"]:
+                is_authorized = True
 
-        if not membership or membership.role not in ["PATRIARCH", "EDITOR"]:
+        if not is_authorized:
             raise ForbiddenException("Droits insuffisants pour ajouter une naissance.")
             
         union_child = UnionChildrenEntity(union_id=union_id, child_id=child_id)

@@ -26,3 +26,13 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+class GuestLoginRequest(BaseModel):
+    code: str
+
+class GuestLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    role: str
+    family_id: UUID
+    family_name: str

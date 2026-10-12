@@ -10,8 +10,8 @@ class PersonEntity(Base):
     family_id = Column(UUID(as_uuid=True), ForeignKey("families.id"))
     first_name = Column(String)
     last_name = Column(String)
-    birth_date = Column(Date)
-    death_date = Column(Date, nullable=True)
+    birth_date = Column(String) # Encrypted
+    death_date = Column(String, nullable=True) # Encrypted
     gender = Column(String(1))
     bio = Column(String, nullable=True)
     x = Column(Integer, default=0)

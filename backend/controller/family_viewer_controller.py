@@ -15,9 +15,22 @@ def get_my_families(db: Session = Depends(get_db), current_user = Depends(get_cu
     return service.get_my_families(current_user.id)
 
 @router.get("/{family_id}/tree")
-def get_family_tree(family_id: UUID, db: Session = Depends(get_db), role: str = Depends(require_viewer)):
+def get_family_tree(family_id: UUID, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     service = FamilyService(db)
-    return service.get_family_tree_data(family_id)
+    data = service.get_family_tree_data(family_id)
+    
+    if getattr(current_user, "is_guest", False):
+        user_role = current_user.role if current_user.family_id == family_id else "VIEWER"
+    else:
+        from entity.family_membership_entity import FamilyMembershipEntity
+        membership = db.query(FamilyMembershipEntity).filter(
+            FamilyMembershipEntity.family_id == family_id,
+            FamilyMembershipEntity.user_id == current_user.id
+        ).first()
+        user_role = membership.role if membership else "VIEWER"
+        
+    data["current_role"] = user_role
+    return data
 
 @router.post("/", response_model=FamilyResponse)
 def create_family(family: FamilyCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):

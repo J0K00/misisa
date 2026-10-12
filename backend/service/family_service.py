@@ -36,9 +36,12 @@ class FamilyService:
         from entity.person_entity import PersonEntity
         from entity.user_entity import UserEntity
 
-        # Generate random invite code
-        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        new_family = FamilyEntity(name=name, invite_code=code)
+        # Generate random 16-character alphanumeric codes
+        chars = string.ascii_uppercase + string.digits
+        view_code = ''.join(random.choices(chars, k=16))
+        edit_code = ''.join(random.choices(chars, k=16))
+        code = ''.join(random.choices(chars, k=8)) # legacy invite_code
+        new_family = FamilyEntity(name=name, invite_code=code, view_code=view_code, edit_code=edit_code)
         created = self.family_repo.create(new_family)
 
         if user_id:
@@ -84,7 +87,9 @@ class FamilyService:
             result.append({
                 "id": m.family.id,
                 "name": m.family.name,
-                "role": m.role
+                "role": m.role,
+                "view_code": m.family.view_code,
+                "edit_code": m.family.edit_code
             })
         return result
 

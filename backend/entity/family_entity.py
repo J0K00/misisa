@@ -8,6 +8,8 @@ class FamilyEntity(Base):
     __tablename__ = "families"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, index=True)
-    invite_code = Column(String(8), unique=True, index=True)
+    invite_code = Column(String(8), unique=True, index=True) # Deprecated
+    view_code = Column(String(16), unique=True, index=True)
+    edit_code = Column(String(16), unique=True, index=True)
     created_at = Column(Date, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)

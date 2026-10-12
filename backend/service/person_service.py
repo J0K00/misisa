@@ -12,16 +12,23 @@ class PersonService:
         # Todo: check if viewer
         return self.repo.get_by_family(family_id)
 
-    def create_person(self, person: PersonCreate, user_id: UUID):
+    def create_person(self, person: PersonCreate, user_id: UUID, current_user = None):
         from entity.family_membership_entity import FamilyMembershipEntity
         from exception.global_exceptions import ForbiddenException
         
-        membership = self.repo.db.query(FamilyMembershipEntity).filter(
-            FamilyMembershipEntity.family_id == person.family_id,
-            FamilyMembershipEntity.user_id == user_id
-        ).first()
+        is_authorized = False
+        if current_user and getattr(current_user, "is_guest", False):
+            if current_user.family_id == person.family_id and current_user.role == "EDITOR":
+                is_authorized = True
+        else:
+            membership = self.repo.db.query(FamilyMembershipEntity).filter(
+                FamilyMembershipEntity.family_id == person.family_id,
+                FamilyMembershipEntity.user_id == user_id
+            ).first()
+            if membership and membership.role in ["PATRIARCH", "EDITOR"]:
+                is_authorized = True
 
-        if not membership or membership.role not in ["PATRIARCH", "EDITOR"]:
+        if not is_authorized:
             raise ForbiddenException("Droits insuffisants pour ajouter un membre.")
             
         # Auto-offset to prevent stacking
@@ -39,4 +46,30 @@ class PersonService:
             self.repo.db.add(union_child)
             self.repo.db.commit()
 
-        return created_person
+        from repository.person_repository import to_person_response
+        return to_person_response(created_person)
+
+    def update_person(self, person_id: UUID, person_dto: PersonUpdate, user_id: UUID, current_user = None):
+        from entity.family_membership_entity import FamilyMembershipEntity
+        from exception.global_exceptions import ForbiddenException, NotFoundException
+        from repository.person_repository import to_person_response
+
+        person_entity = self.repo.get_by_id(person_id)
+        if not person_entity:
+            raise NotFoundException("Membre introuvable.")
+
+        # Only PATRIARCH can edit member details
+        is_patriarch = False
+        if not (current_user and getattr(current_user, "is_guest", False)):
+            membership = self.repo.db.query(FamilyMembershipEntity).filter(
+                FamilyMembershipEntity.family_id == person_entity.family_id,
+                FamilyMembershipEntity.user_id == user_id
+            ).first()
+            if membership and membership.role == "PATRIARCH":
+                is_patriarch = True
+
+        if not is_patriarch:
+            raise ForbiddenException("Seul le Patriarche peut modifier les informations d'un membre.")
+
+        updated = self.repo.update(person_entity, person_dto)
+        return to_person_response(updated)

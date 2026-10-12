@@ -11,7 +11,9 @@ class FamilyCreate(FamilyBase):
 
 class FamilyResponse(FamilyBase):
     id: UUID
-    invite_code: str
+    invite_code: Optional[str] = None
+    view_code: Optional[str] = None
+    edit_code: Optional[str] = None
     created_at: date
 
     class Config:

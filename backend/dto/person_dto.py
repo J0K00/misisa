@@ -18,6 +18,16 @@ class PersonCreate(PersonBase):
     family_id: UUID
     parent_union_id: Optional[UUID] = None
 
+class PersonUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    birth_date: Optional[date] = None
+    death_date: Optional[date] = None
+    gender: Optional[str] = None
+    bio: Optional[str] = None
+    x: Optional[int] = None
+    y: Optional[int] = None
+
 class PersonResponse(PersonBase):
     id: UUID
     family_id: UUID

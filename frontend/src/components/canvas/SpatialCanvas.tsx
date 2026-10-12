@@ -173,8 +173,10 @@ export default function SpatialCanvas() {
           
           const unionMidX = (p1.x! + 200 + p2.x!) / 2
           const unionMidY = p1.y! + 45
-          const gap = Math.abs(p2.x! - (p1.x! + 200))
           
+          const canEdit = treeData?.current_role !== "VIEWER"
+          if (!canEdit) return null
+
           return (
             <div
               key={`union-branch-${union.id}`}

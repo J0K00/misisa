@@ -1,5 +1,4 @@
 import { useState, useRef } from "react"
-import { uploadImageToCloudinary } from "../../services/cloudinary"
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
 import { Trash2, Upload, Loader2, ImagePlus } from "lucide-react"
@@ -10,7 +9,7 @@ export interface PersonPhoto {
   public_id: string
 }
 
-export function MemberPhotoCarousel({ personId }: { personId: string }) {
+export function MemberPhotoCarousel({ personId: _personId }: { personId: string }) {
   const [photos, setPhotos] = useState<PersonPhoto[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)

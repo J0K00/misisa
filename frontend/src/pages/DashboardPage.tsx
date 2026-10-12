@@ -19,9 +19,19 @@ export default function DashboardPage() {
     queryKey: ["my-families"],
     queryFn: async () => {
       const res = await api.get("/family/my-families")
-      return res.data as Array<{ id: string, name: string, role: string }>
+      return res.data as Array<{ id: string, name: string, role: string, view_code?: string, edit_code?: string }>
     }
   })
+
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+
+  const handleCopy = (e: React.MouseEvent, code: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigator.clipboard.writeText(code)
+    setCopiedCode(code)
+    setTimeout(() => setCopiedCode(null), 2000)
+  }
 
   const updateFamilyMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string, name: string }) => {
@@ -74,10 +84,13 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-stone-50">
       <DashboardNavbar />
-      <div className="container max-w-5xl mx-auto p-6 md:p-12 space-y-8">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-stone-200 pb-6">
-          <h1 className="text-4xl font-serif text-[#2A2421]">Mes Familles</h1>
-          <Button onClick={() => setShowForm(!showForm)} className="bg-[#3B2314] hover:bg-[#2A2421] text-white">
+      <div className="container max-w-5xl mx-auto p-4 sm:p-6 md:p-12 space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-stone-200 pb-6">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-serif text-[#2A2421]">Mes Familles</h1>
+            <p className="text-sm text-stone-500 mt-1">Gérez vos arbres généalogiques et partagez vos codes d'accès.</p>
+          </div>
+          <Button onClick={() => setShowForm(!showForm)} className="bg-[#3B2314] hover:bg-[#2A2421] text-white w-full sm:w-auto">
             <Plus className="w-5 h-5 mr-2" />
             Ajouter une famille
           </Button>
@@ -86,7 +99,7 @@ export default function DashboardPage() {
         <div className="flex gap-2">
           <Input 
             placeholder="Rechercher une famille..." 
-            className="max-w-md bg-white border-stone-200"
+            className="w-full sm:max-w-md bg-white border-stone-200"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -119,39 +132,82 @@ export default function DashboardPage() {
             {filteredFamilies.map((family) => (
               <div key={family.id} className="relative group">
                 <Link to={`/family/${family.id}`}>
-                  <Card className="hover:border-[#3B2314] transition-colors cursor-pointer bg-white h-full shadow-sm hover:shadow-md">
-                    <CardHeader className="pb-3">
-                      {editingId === family.id ? (
-                        <div className="flex items-center gap-2" onClick={e => e.preventDefault()}>
-                          <Input 
-                            value={editName}
-                            onChange={e => setEditName(e.target.value)}
-                            onClick={e => e.stopPropagation()}
-                            autoFocus
-                          />
-                          <Button size="icon" variant="ghost" onClick={e => saveEdit(e, family.id)}>
-                            <Check className="w-4 h-4 text-green-600" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={cancelEdit}>
-                            <X className="w-4 h-4 text-red-600" />
-                          </Button>
+                  <Card className="hover:border-[#3B2314] transition-all cursor-pointer bg-white h-full shadow-sm hover:shadow-md flex flex-col justify-between">
+                    <div>
+                      <CardHeader className="pb-3">
+                        {editingId === family.id ? (
+                          <div className="flex items-center gap-2" onClick={e => e.preventDefault()}>
+                            <Input 
+                              value={editName}
+                              onChange={e => setEditName(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              autoFocus
+                            />
+                            <Button size="icon" variant="ghost" onClick={e => saveEdit(e, family.id)}>
+                              <Check className="w-4 h-4 text-green-600" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={cancelEdit}>
+                              <X className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <CardTitle className="font-serif text-2xl text-stone-900 pr-12">{family.name}</CardTitle>
+                        )}
+                        <p className="text-xs text-stone-400 font-sans mt-0.5">Cliquez pour ouvrir l'arbre</p>
+                      </CardHeader>
+
+                      {/* Section des codes de partage */}
+                      {family.role === "PATRIARCH" && (family.view_code || family.edit_code) && (
+                        <div className="px-6 pb-4 pt-1 space-y-2 border-t border-stone-100 mt-2" onClick={e => e.preventDefault()}>
+                          {family.view_code && (
+                            <div className="flex items-center justify-between text-xs bg-stone-50 p-2 rounded-lg border border-stone-200/60">
+                              <div className="truncate mr-2">
+                                <span className="font-semibold text-stone-700 block">Code Lecture :</span>
+                                <code className="font-mono text-stone-600 text-[11px] select-all tracking-wider">{family.view_code}</code>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-xs text-stone-600 hover:text-stone-900 border-stone-300"
+                                onClick={(e) => handleCopy(e, family.view_code!)}
+                              >
+                                {copiedCode === family.view_code ? "Copié !" : "Copier"}
+                              </Button>
+                            </div>
+                          )}
+
+                          {family.edit_code && (
+                            <div className="flex items-center justify-between text-xs bg-amber-50/60 p-2 rounded-lg border border-amber-200/60">
+                              <div className="truncate mr-2">
+                                <span className="font-semibold text-amber-900 block">Code Édition :</span>
+                                <code className="font-mono text-amber-800 text-[11px] select-all tracking-wider">{family.edit_code}</code>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-xs text-amber-900 hover:text-amber-950 border-amber-300 bg-white"
+                                onClick={(e) => handleCopy(e, family.edit_code!)}
+                              >
+                                {copiedCode === family.edit_code ? "Copié !" : "Copier"}
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <CardTitle className="font-serif text-2xl text-stone-900 pr-12">{family.name}</CardTitle>
                       )}
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-stone-500">Ouvrir le canvas interactif</p>
+                    </div>
+
+                    <CardContent className="pt-2 pb-4 text-xs text-stone-400">
+                      Rôle : {family.role === "PATRIARCH" ? "Patriarche" : family.role}
                     </CardContent>
                   </Card>
                 </Link>
 
                 {editingId !== family.id && family.role === "PATRIARCH" && (
                   <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="icon" variant="ghost" className="h-8 w-8 bg-white/80 hover:bg-white" onClick={(e) => startEdit(e, family.id, family.name)}>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 bg-white/80 hover:bg-white shadow-xs" onClick={(e) => startEdit(e, family.id, family.name)}>
                       <Edit2 className="w-4 h-4 text-stone-600" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 bg-white/80 hover:bg-red-50" onClick={(e) => handleDelete(e, family.id)}>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 bg-white/80 hover:bg-red-50 shadow-xs" onClick={(e) => handleDelete(e, family.id)}>
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>

@@ -18,6 +18,11 @@ export function CreateUnionForm({ familyId, onClose }: Props) {
   const { mutateAsync: createUnion, isPending } = useCreateUnion()
   const { showModal } = useModalStore()
 
+  const [search1, setSearch1] = useState("")
+  const [search2, setSearch2] = useState("")
+  const [open1, setOpen1] = useState(false)
+  const [open2, setOpen2] = useState(false)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!partner1 || !partner2) return
@@ -41,11 +46,6 @@ export function CreateUnionForm({ familyId, onClose }: Props) {
   }
 
   if (isLoading) return <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-
-  const [search1, setSearch1] = useState("")
-  const [search2, setSearch2] = useState("")
-  const [open1, setOpen1] = useState(false)
-  const [open2, setOpen2] = useState(false)
 
   const filteredMembers1 = members?.filter((m: any) => 
     `${m.first_name} ${m.last_name}`.toLowerCase().includes(search1.toLowerCase())

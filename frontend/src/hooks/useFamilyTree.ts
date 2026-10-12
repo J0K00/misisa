@@ -33,7 +33,6 @@ export function useFamilyMembers(familyId: string) {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 export function useCreateFamily() {
-  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (name: string) => {
       const { data } = await api.post("/family/", { name })

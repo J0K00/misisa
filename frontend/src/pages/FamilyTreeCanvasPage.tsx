@@ -8,53 +8,69 @@ import { CreateMemberForm } from "@/components/forms/CreateMemberForm"
 import { CreateUnionForm } from "@/components/forms/CreateUnionForm"
 import { useTreeStore } from "@/store/useTreeStore"
 
+import { useAuthStore } from "@/store/useAuthStore"
+
 export default function FamilyTreeCanvasPage() {
   const { familyId } = useParams()
   const { data: treeData, isLoading } = useFamilyTree(familyId || "")
   const [showAddMember, setShowAddMember] = useState(false)
   const [showAddUnion, setShowAddUnion] = useState(false)
   const { scale, setZoom } = useTreeStore()
+  const { user } = useAuthStore()
+
+  const currentRole = treeData?.current_role || user?.role || "VIEWER"
+  const canEdit = currentRole === "PATRIARCH" || currentRole === "EDITOR"
+
+  const roleLabel = currentRole === "PATRIARCH" ? "Patriarche" : currentRole === "EDITOR" ? "Éditeur" : "Lecteur (Lecture seule)"
 
   return (
     <div className="relative w-full h-screen bg-[#FDFBF7] overflow-hidden">
-      {/* Header flottant */}
-      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20 p-4 px-6 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-stone-200">
+      {/* Header flottant responsive */}
+      <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 z-20 p-3 sm:p-4 sm:px-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-stone-200">
         <div>
-          <h2 className="text-3xl font-serif text-[#2A2421]">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-serif text-[#2A2421]">
             {isLoading ? "Chargement..." : treeData?.family?.name || `Arbre`}
           </h2>
           {treeData?.family && (
-            <p className="text-xs text-stone-500 mt-1 uppercase tracking-widest font-semibold">
-              Rôle : Patriarche
+            <p className="text-[11px] sm:text-xs text-stone-500 mt-0.5 uppercase tracking-wider font-semibold">
+              Rôle : <span className={canEdit ? "text-[#3B2314] font-bold" : "text-stone-600"}>{roleLabel}</span>
             </p>
           )}
         </div>
         
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            className="border-stone-300 text-stone-700 bg-white hover:bg-stone-50 rounded-full px-6"
-            onClick={() => setShowAddUnion(true)}
-          >
-            Créer une union
-          </Button>
-          <Button 
-            className="bg-[#3B2314] hover:bg-[#2A2421] text-white rounded-full px-6"
-            onClick={() => setShowAddMember(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Ajouter un membre
-          </Button>
-          <Button variant="outline" asChild className="rounded-full border-stone-300 text-stone-700 bg-white hover:bg-stone-50">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+          {canEdit && (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-stone-300 text-stone-700 bg-white hover:bg-stone-50 rounded-full px-4 text-xs sm:text-sm"
+                onClick={() => setShowAddUnion(true)}
+              >
+                Créer une union
+              </Button>
+              <Button 
+                size="sm"
+                className="bg-[#3B2314] hover:bg-[#2A2421] text-white rounded-full px-4 text-xs sm:text-sm"
+                onClick={() => setShowAddMember(true)}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1 sm:mr-2" />
+                Ajouter un membre
+              </Button>
+            </>
+          )}
+          
+          <Button variant="outline" size="sm" asChild className="rounded-full border-stone-300 text-stone-700 bg-white hover:bg-stone-50 text-xs sm:text-sm">
             <Link to={`/family/${familyId}/members`}>
-              <Users className="w-4 h-4 mr-2" />
-              Vue Liste
+              <Users className="w-3.5 h-3.5 mr-1 sm:mr-2" />
+              Liste
             </Link>
           </Button>
-          <Button variant="ghost" asChild className="rounded-full text-stone-600 hover:bg-stone-100">
-            <Link to="/dashboard">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
+
+          <Button variant="ghost" size="sm" asChild className="rounded-full text-stone-600 hover:bg-stone-100 text-xs sm:text-sm">
+            <Link to={user?.is_guest ? "/login" : "/dashboard"}>
+              <ArrowLeft className="w-3.5 h-3.5 mr-1 sm:mr-2" />
+              {user?.is_guest ? "Quitter" : "Retour"}
             </Link>
           </Button>
         </div>

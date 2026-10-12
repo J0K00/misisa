@@ -38,3 +38,35 @@ def delete_account(req: DeleteAccountRequest, db: Session = Depends(get_db), cur
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+from dto.auth_dto import GuestLoginRequest, GuestLoginResponse
+from entity.family_entity import FamilyEntity
+from security.jwt_handler import create_access_token
+
+@router.post("/guest-login", response_model=GuestLoginResponse)
+def guest_login(req: GuestLoginRequest, db: Session = Depends(get_db)):
+    clean_code = req.code.strip()
+    family = db.query(FamilyEntity).filter(
+        (FamilyEntity.view_code == clean_code) | (FamilyEntity.edit_code == clean_code),
+        FamilyEntity.is_active == True
+    ).first()
+
+    if not family:
+        raise HTTPException(status_code=404, detail="Code d'accès invalide ou famille introuvable.")
+
+    role = "EDITOR" if family.edit_code == clean_code else "VIEWER"
+
+    token = create_access_token({
+        "sub": "guest",
+        "is_guest": True,
+        "family_id": str(family.id),
+        "role": role
+    })
+
+    return GuestLoginResponse(
+        access_token=token,
+        token_type="bearer",
+        role=role,
+        family_id=family.id,
+        family_name=family.name
+    )

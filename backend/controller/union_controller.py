@@ -12,9 +12,9 @@ router = APIRouter(prefix="/unions", tags=["Unions"])
 @router.post("/", response_model=UnionResponse)
 def create_union(union: UnionCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     service = UnionService(db)
-    return service.create_union(union, current_user.id)
+    return service.create_union(union, current_user.id, current_user=current_user)
 
 @router.post("/{union_id}/children")
 def add_child(union_id: UUID, payload: UnionChildCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     service = UnionService(db)
-    return service.add_child(union_id, payload.child_id, current_user.id)
+    return service.add_child(union_id, payload.child_id, current_user.id, current_user=current_user)
