@@ -32,6 +32,13 @@ configure_cloudinary()
 # Création des tables dans la BDD PostgreSQL (Idéalement via Alembic en prod)
 Base.metadata.create_all(bind=engine)
 
+# Patch automatique des colonnes manquantes (migrations légères)
+from sqlalchemy import text
+with engine.connect() as conn:
+    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(1) DEFAULT 'M';"))
+    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;"))
+    conn.commit()
+
 app = FastAPI(title="Généalogie & Racines API")
 
 # Configuration CORS
@@ -40,6 +47,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-New-Token", "X-New-Role"],
 )
 
 # Enregistrement des exception handlers

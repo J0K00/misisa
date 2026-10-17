@@ -3,7 +3,7 @@ import { useAuthStore } from "../store/useAuthStore"
 import { useModalStore } from "../store/useModalStore"
 
 export const api = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://127.0.0.1:8000" : ""),
   headers: {
     "Content-Type": "application/json",
   }
@@ -24,7 +24,20 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const newToken = response.headers?.['x-new-token'] || response.headers?.['X-New-Token']
+    const newRole = response.headers?.['x-new-role'] || response.headers?.['X-New-Role']
+    if (newToken && newRole) {
+      const currentAuth = useAuthStore.getState()
+      if (currentAuth.user) {
+        currentAuth.setAuth(
+          { ...currentAuth.user, role: newRole },
+          newToken
+        )
+      }
+    }
+    return response
+  },
   (error) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().logout()
@@ -44,3 +57,17 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export async function downgradeGuestToViewer() {
+  try {
+    const { data } = await api.post("/auth/guest-downgrade")
+    if (data?.access_token) {
+      const currentAuth = useAuthStore.getState()
+      if (currentAuth.user) {
+        currentAuth.setAuth({ ...currentAuth.user, role: "VIEWER" }, data.access_token)
+      }
+    }
+  } catch (e) {
+    console.error("Failed to downgrade guest session", e)
+  }
+}

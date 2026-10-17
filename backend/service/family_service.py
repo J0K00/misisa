@@ -14,10 +14,21 @@ class FamilyService:
         family = self.family_repo.get_by_id(family_id)
         if not family:
             raise NotFoundException("Famille introuvable")
-        
+
+        from service.family_layout import apply_family_layout
+        apply_family_layout(self.family_repo.db, family_id)
+
         persons = self.person_repo.get_by_family(family_id)
-        unions = self.union_repo.get_all()
-        children = self.union_repo.get_children()
+        person_ids = [p.id for p in persons]
+
+        from entity.union_entity import UnionEntity, UnionChildrenEntity
+        unions = self.family_repo.db.query(UnionEntity).filter(
+            (UnionEntity.partner_1_id.in_(person_ids)) | (UnionEntity.partner_2_id.in_(person_ids))
+        ).all()
+        union_ids = [u.id for u in unions]
+        children = self.family_repo.db.query(UnionChildrenEntity).filter(
+            UnionChildrenEntity.union_id.in_(union_ids)
+        ).all()
         
         return {
             "family": family,
@@ -53,18 +64,24 @@ class FamilyService:
             )
             self.family_repo.db.add(membership)
 
-            # Fetch user to get name
+            # Fetch user to get name and profile details
             user = self.family_repo.db.query(UserEntity).filter(UserEntity.id == user_id).first()
             if user:
-                # Create the patriarch as a Person in the tree
+                from security.encryption import encrypt_value
+                birth_val = str(user.birth_date) if user.birth_date else "1975-01-01"
+                encrypted_birth = encrypt_value(birth_val)
+                patriarch_gender = getattr(user, "gender", None) or "M"
+
+                # Create the patriarch as a Person in the tree using their actual profile info
                 patriarch_person = PersonEntity(
                     family_id=created.id,
                     first_name=user.first_name,
                     last_name=user.last_name,
-                    birth_date=date(1970, 1, 1), # Default date
-                    gender="M", # Default
-                    x=0,
-                    y=0
+                    birth_date=encrypted_birth,
+                    gender=patriarch_gender,
+                    bio="Patriarche et fondateur de la famille.",
+                    x=60,
+                    y=60
                 )
                 self.family_repo.db.add(patriarch_person)
 

@@ -15,7 +15,8 @@ export function DashboardNavbar() {
 
         <div className="flex items-center gap-4">
           <span className="text-sm text-stone-600 hidden md:inline-block">
-            Connecté en tant que {user?.first_name} {user?.last_name}
+            Connecté en tant que <strong className="text-stone-900">{user?.first_name} {user?.last_name}</strong>
+            {user?.age ? <span className="ml-1.5 inline-flex items-center text-xs bg-[#3B2314]/10 text-[#3B2314] font-semibold px-2 py-0.5 rounded-full">{user.age} ans</span> : null}
           </span>
           <Button variant="ghost" asChild className="rounded-full px-4 text-[#3B2314] hover:bg-stone-100">
             <Link to="/profile">

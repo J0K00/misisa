@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useParams, Link } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useParams, useSearchParams, Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import SpatialCanvas from "@/components/canvas/SpatialCanvas"
 import { useFamilyTree } from "@/hooks/useFamilyTree"
@@ -7,21 +7,39 @@ import { Plus, Users, ArrowLeft, X } from "lucide-react"
 import { CreateMemberForm } from "@/components/forms/CreateMemberForm"
 import { CreateUnionForm } from "@/components/forms/CreateUnionForm"
 import { useTreeStore } from "@/store/useTreeStore"
-
 import { useAuthStore } from "@/store/useAuthStore"
+import { useModalStore } from "@/store/useModalStore"
+import { downgradeGuestToViewer } from "@/services/api"
 
 export default function FamilyTreeCanvasPage() {
   const { familyId } = useParams()
+  const [searchParams] = useSearchParams()
   const { data: treeData, isLoading } = useFamilyTree(familyId || "")
-  const [showAddMember, setShowAddMember] = useState(false)
-  const [showAddUnion, setShowAddUnion] = useState(false)
   const { scale, setZoom } = useTreeStore()
   const { user } = useAuthStore()
 
-  const currentRole = treeData?.current_role || user?.role || "VIEWER"
+  const { showModal } = useModalStore()
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [showAddUnion, setShowAddUnion] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get("openAddMember") === "true" || (user?.is_guest && user?.role === "EDITOR")) {
+      setShowAddMember(true)
+    }
+  }, [searchParams, user?.role, user?.is_guest])
+
+  const currentRole = user?.is_guest ? (user?.role || "VIEWER") : (treeData?.current_role || user?.role || "VIEWER")
   const canEdit = currentRole === "PATRIARCH" || currentRole === "EDITOR"
 
-  const roleLabel = currentRole === "PATRIARCH" ? "Patriarche" : currentRole === "EDITOR" ? "Éditeur" : "Lecteur (Lecture seule)"
+  const roleLabel = currentRole === "PATRIARCH" ? "Patriarche" : currentRole === "EDITOR" ? "Éditeur (Membre unique)" : "Lecteur (Lecture seule)"
+
+  const handleCloseAddMember = async () => {
+    if (user?.is_guest && user?.role === "EDITOR") {
+      await downgradeGuestToViewer()
+      showModal('info', 'Accès Lecteur', "Votre droit d'ajout unique a été révoqué suite à l'annulation. Vous êtes désormais en mode lecture seule.")
+    }
+    setShowAddMember(false)
+  }
 
   return (
     <div className="relative w-full h-screen bg-[#FDFBF7] overflow-hidden">
@@ -104,14 +122,14 @@ export default function FamilyTreeCanvasPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-stone-100">
               <h2 className="text-xl font-serif font-semibold text-stone-900">Nouveau membre</h2>
-              <button onClick={() => setShowAddMember(false)} className="text-stone-400 hover:text-stone-600">
+              <button onClick={handleCloseAddMember} className="text-stone-400 hover:text-stone-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6">
               <CreateMemberForm 
                 familyId={familyId} 
-                onClose={() => setShowAddMember(false)} 
+                onClose={handleCloseAddMember} 
               />
             </div>
           </div>

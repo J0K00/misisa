@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  # Base de données relationnelle PostgreSQL 17
+  db:
+    image: postgres:17-alpine
+    container_name: misisa_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-misisa_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-misisa_secure_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-misisa_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - misisa_network
+
+  # API Backend FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: misisa_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-misisa_secure_password}@db:5432/${POSTGRES_DB:-misisa_db}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-in-prod}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-super-secret-roots-encryption-key-2026}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-demo}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-api_key}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-api_secret}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - misisa_network
+
+  # Frontend React SPA servi par Nginx (avec reverse proxy vers l'API)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-demo}
+        VITE_CLOUDINARY_UPLOAD_PRESET: ${CLOUDINARY_UPLOAD_PRESET:-genealogie_unsigned}
+    container_name: misisa_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - misisa_network
+
+volumes:
+  postgres_data:
+    name: misisa_postgres_data
+
+networks:
+  misisa_network:
+    name: misisa_network
+    driver: bridge

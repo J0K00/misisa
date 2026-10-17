@@ -26,6 +26,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             family_id=uuid.UUID(family_id) if family_id else None,
             role=role,
             is_guest=True,
+            session_id=payload.get("session_id"),
             first_name="Invité",
             last_name=f"({role.lower()})",
             email="guest@family.local"

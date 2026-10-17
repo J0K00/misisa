@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from repository.person_repository import PersonRepository
 from exception.global_exceptions import NotFoundException
-from dto.person_dto import PersonCreate
+from dto.person_dto import PersonCreate, PersonUpdate
 
 class PersonService:
     def __init__(self, db: Session):
@@ -15,10 +15,15 @@ class PersonService:
     def create_person(self, person: PersonCreate, user_id: UUID, current_user = None):
         from entity.family_membership_entity import FamilyMembershipEntity
         from exception.global_exceptions import ForbiddenException
+        from security.session_tracker import is_session_used, mark_session_used
+        from service.union_service import validate_child_and_parents_age, align_union_children
         
         is_authorized = False
         if current_user and getattr(current_user, "is_guest", False):
             if current_user.family_id == person.family_id and current_user.role == "EDITOR":
+                # Vérifier si la session d'édition a déjà été utilisée (usage unique)
+                if is_session_used(getattr(current_user, "session_id", None)):
+                    raise ForbiddenException("Votre droit d'édition à usage unique a déjà été utilisé pour ajouter un membre. Votre session est désormais en lecture seule.")
                 is_authorized = True
         else:
             membership = self.repo.db.query(FamilyMembershipEntity).filter(
@@ -30,6 +35,10 @@ class PersonService:
 
         if not is_authorized:
             raise ForbiddenException("Droits insuffisants pour ajouter un membre.")
+
+        # Si l'enfant est relié à une union parent, valider les âges avant création
+        if getattr(person, 'parent_union_id', None):
+            validate_child_and_parents_age(self.repo.db, person.parent_union_id, person.birth_date)
             
         # Auto-offset to prevent stacking
         from entity.person_entity import PersonEntity
@@ -45,6 +54,15 @@ class PersonService:
             union_child = UnionChildrenEntity(union_id=person.parent_union_id, child_id=created_person.id)
             self.repo.db.add(union_child)
             self.repo.db.commit()
+
+        # Recalculer et appliquer le positionnement hiérarchique de l'arbre
+        from service.family_layout import apply_family_layout
+        apply_family_layout(self.repo.db, person.family_id)
+        self.repo.db.refresh(created_person)
+
+        # Si invité avec rôle EDITOR, marquer la session comme consommée
+        if current_user and getattr(current_user, "is_guest", False) and current_user.role == "EDITOR":
+            mark_session_used(getattr(current_user, "session_id", None))
 
         from repository.person_repository import to_person_response
         return to_person_response(created_person)

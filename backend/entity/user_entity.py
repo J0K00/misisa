@@ -14,6 +14,7 @@ class UserEntity(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     birth_date = Column(Date, nullable=True)
+    gender = Column(String(1), nullable=True, default="M")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
