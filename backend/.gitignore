@@ -1,1 +1,15 @@
+# Backend gitignore
 .env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+*.sqlite3
+genealogie.db
+.idea/
+.vscode/
+*.log

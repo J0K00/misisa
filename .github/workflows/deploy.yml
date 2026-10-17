@@ -1,0 +1,114 @@
+name: CI/CD Misisa - Tests & Déploiement VPS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # --------------------------------------------------------------------------
+  # 1. Tests & Validation du Code (Intégration Continue)
+  # --------------------------------------------------------------------------
+  test-and-lint:
+    name: 🧪 Tests & Build Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Récupération du code
+        uses: actions/checkout@v4
+
+      # Backend Python
+      - name: 🐍 Configuration de Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: 📦 Installation des dépendances Backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: 🧪 Exécution des tests unitaires Backend
+        run: |
+          python -m unittest discover -s backend/tests -p "test_*.py"
+
+      # Frontend Node.js
+      - name: 🟢 Configuration de Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📦 Installation des dépendances Frontend
+        run: |
+          cd frontend
+          npm ci
+
+      - name: 🏗️ Compilation du Frontend (Vite & TypeScript)
+        run: |
+          cd frontend
+          npm run build
+
+  # --------------------------------------------------------------------------
+  # 2. Déploiement automatique sur le VPS Ubuntu 24.04 (Livraison Continue)
+  # --------------------------------------------------------------------------
+  deploy:
+    name: 🚀 Déploiement sur VPS Ubuntu 24
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: 📡 Connexion SSH & Déploiement Docker
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+            APP_DIR="${{ secrets.APP_DIR || '/var/www/misisa' }}"
+            
+            echo "=========================================================="
+            echo "🚀 Début du déploiement de Misisa dans : $APP_DIR"
+            echo "=========================================================="
+
+            if [ ! -d "$APP_DIR" ]; then
+              echo "❌ Erreur: Le dossier $APP_DIR n'existe pas sur le serveur."
+              echo "Veuillez d'abord cloner le dépôt dans ce dossier."
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+
+            echo "📥 Mise à jour du code source..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Vérification du fichier .env
+            if [ ! -f .env ]; then
+              echo "⚠️ Fichier .env absent. Initialisation depuis .env.example..."
+              cp .env.example .env
+              echo "Pensez à configurer les vrais secrets dans $APP_DIR/.env !"
+            fi
+
+            echo "🐳 Reconstruction et redémarrage des conteneurs Docker..."
+            docker compose up -d --build --remove-orphans
+
+            echo "🧹 Nettoyage des anciennes images Docker inutilisées..."
+            docker image prune -f
+
+            echo "📊 État des conteneurs :"
+            docker compose ps
+
+            echo "=========================================================="
+            echo "✅ Déploiement terminé avec succès !"
+            echo "=========================================================="

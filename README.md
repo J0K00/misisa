@@ -18,6 +18,8 @@
   - [7. Sauvegarde et Restauration PostgreSQL 17](#7-sauvegarde-et-restauration-postgresql-17)
   - [8. Maintenance & Mises à jour](#8-maintenance--mises-à-jour)
 - [Démarrage en Développement Local (sans Docker)](#-démarrage-en-développement-local-sans-docker)
+- [Pipeline CI/CD GitHub Actions vers le VPS](#-pipeline-cicd-github-actions-vers-le-vps)
+- [Tests Utilitaires & Automatisation](#-tests-utilitaires--automatisation)
 - [Structure du Projet](#-structure-du-projet)
 
 ---
@@ -316,6 +318,46 @@ cp .env.example .env
 npm run dev
 ```
 Accédez au frontend sur `http://localhost:5173` et à la documentation API sur `http://localhost:8000/docs`.
+
+## 🤖 Pipeline CI/CD GitHub Actions vers le VPS
+
+Le projet inclut une chaîne CI/CD complète dans [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) :
+1. **Intégration Continue (CI)** :
+   - Installation et exécution de la suite de tests unitaires backend (`python -m unittest discover`).
+   - Validation du typage et compilation de production du frontend React (`npm ci` & `npm run build`).
+2. **Déploiement Continu (CD)** :
+   - Déclenché automatiquement lors de chaque `push` sur la branche `main` (ou manuellement via l'onglet *Actions* de GitHub).
+   - Connexion SSH sécurisée au serveur VPS Ubuntu 24.04 via `appleboy/ssh-action`.
+   - Récupération du code à jour (`git fetch origin main && git reset --hard origin/main`).
+   - Reconstruction optimisée et redémarrage des conteneurs (`docker compose up -d --build`).
+   - Nettoyage des anciennes images Docker (`docker image prune -f`).
+
+### Configuration des Secrets GitHub
+Dans votre dépôt GitHub, rendez-vous dans **Settings** > **Secrets and variables** > **Actions** et ajoutez les secrets suivants :
+
+| Secret | Description | Exemple |
+|---|---|---|
+| `VPS_HOST` | Adresse IP ou nom d'hôte de votre VPS | `51.159.20.120` |
+| `VPS_USER` | Utilisateur SSH disposant des droits Docker | `ubuntu` ou `root` |
+| `VPS_SSH_KEY` | Clé privée SSH (sans passphrase) | `-----BEGIN OPENSSH PRIVATE KEY----- ...` |
+| `VPS_PORT` | Port SSH (optionnel, 22 par défaut) | `22` |
+| `APP_DIR` | Chemin d'accès au projet sur le VPS | `/var/www/misisa` |
+
+---
+
+## 🧪 Tests Utilitaires & Automatisation
+
+Le dossier `backend/tests/` regroupe les tests automatisés vérifiant la robustesse des fonctionnalités critiques :
+- **`test_family_layout.py`** : Validation du positionnement hiérarchique, alignement des générations, contiguïté stricte des couples et garantie absolue anti-enjambement des fratries.
+- **`test_encryption.py`** : Chiffrement et déchiffrement Fernet (AES) au repos, préservation des valeurs vides et repli tolérant.
+- **`test_jwt_security.py`** : Hachage Bcrypt, vérification de mots de passe, génération et décodage des jetons JWT d'accès et de rafraîchissement.
+- **`test_person_dto.py`** : Calcul dynamique de l'âge (individus vivants, date de décès, gestion des jours et mois de naissance).
+
+### Exécuter les tests localement
+```bash
+cd backend
+python -m unittest discover -s tests -p "test_*.py" -v
+```
 
 ---
 
