@@ -393,4 +393,4 @@ roots/
 ---
 
 ## 📄 Licence & Droits
-Tous droits réservés © 2026 - **Misisa : Généalogie & Racines**.
+Tous droits réservés © 2026 - **Mulunda Community - Go Beyond What You See**.
